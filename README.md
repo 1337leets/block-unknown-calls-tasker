@@ -8,15 +8,17 @@ SMS that explains this.
 
 The profile fires on an incoming call from a number that is not in the contacts (`!C:ANY`). Its task then
 
-1. copies `%CNUM` into a local variable straight away, because `%CNUM` can change once the call ends
+1. copies `%CNUM` into a local variable straight away, because `%CNUM` can change once the call ends, and rewrites a
+   leading `+90` as `0`, so the same caller is one entry whichever form the number arrives in
 2. shows a notification with the number
 3. looks the number up in two global arrays, `%RepeatNums` and `%RepeatTimes`, that hold each unknown caller and the
-   time of their last call
+   time of their last call. The lookup `%RepeatNums(#?%callernum)` treats its argument as a pattern, and a `+` in it
+   breaks the lookup, which is the other reason for rewriting `+90` first
 4. if the same number called less than 300 seconds ago, shows a "repeat caller" notification and stops, so the call
    rings through normally
 5. otherwise stores the number and the current time, replacing an older entry for the same number
 6. turns airplane mode on, waits two seconds and turns it off again, which drops the call
-7. stops here for corporate numbers starting with `0212`, `0216`, `0850` or `0800`
+7. stops here for corporate numbers, matched with the regex `^(\+90|0)(212|216|850|800).*`
 8. for any other number, waits five seconds and sends the SMS below
 
 ```
@@ -29,8 +31,8 @@ from, and `0850` and `0800` are company and toll-free numbers. They get no SMS b
 
 ## Installation
 
-1. Copy `Block_Unknown_Allow_Repeat.prf.xml` to the phone.
-2. In Tasker, long-press the Profiles tab, choose Import Profile and pick the file.
+1. Copy `Block_Unknown_Allow_Repeat.prj.xml` to the phone.
+2. In Tasker, long-press the Projects bar, choose Import Project and pick the file.
 3. Edit the Send SMS action if you want a different message, and the If condition if your corporate prefixes differ.
 
 ## Requirements
@@ -46,8 +48,6 @@ adb shell pm grant net.dinglisch.android.taskerm android.permission.WRITE_SECURE
 
 ## Limitations
 
-- The prefix check expects the number in national format (`0212...`). A number that arrives as `+90212...` is
-  treated as personal and gets the SMS.
 - Every blocked personal call sends an SMS, which may cost money depending on the plan.
 - Airplane mode also cuts mobile data and any other call for those two seconds.
 - The arrays grow by one entry per new unknown number and are never trimmed.
